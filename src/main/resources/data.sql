@@ -1,3 +1,3 @@
-INSERT INTO customer (name, lastname, state, age) VALUES ('Carlos', 'Lopez', 'active', 22);
-INSERT INTO customer (name, lastname, state, age) VALUES ('Maria', 'Gomez', 'inactive', 20);
-INSERT INTO customer (name, lastname, state, age) VALUES ('Ana', 'Diaz', 'active', 30);
+INSERT INTO customer (nombre, apellido, estado, edad) VALUES ('Carlos', 'Lopez', 'ACTIVE', 22);
+INSERT INTO customer (nombre, apellido, estado, edad) VALUES ('Maria', 'Gomez', 'INACTIVE', 20);
+INSERT INTO customer (nombre, apellido, estado, edad) VALUES ('Ana', 'Diaz', 'ACTIVE', 30);

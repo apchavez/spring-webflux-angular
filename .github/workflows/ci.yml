@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21 (temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Dar permisos a gradlew
+        run: chmod +x gradlew
+
+      - name: Compilar proyecto
+        run: ./gradlew build -x test --no-daemon
+
+      - name: Ejecutar pruebas
+        run: ./gradlew test --no-daemon
+        env:
+          SPRING_PROFILES_ACTIVE: dev
+
+      - name: Generar reporte JaCoCo
+        if: always()
+        run: ./gradlew jacocoTestReport --no-daemon
+
+      - name: Verificar cobertura mínima (80 %)
+        run: ./gradlew jacocoTestCoverageVerification --no-daemon
+
+      - name: Publicar reporte JaCoCo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: build/reports/jacoco/test/html/
+          retention-days: 30
