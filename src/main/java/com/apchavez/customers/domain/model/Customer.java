@@ -14,13 +14,13 @@ public record Customer(
             throw new ClienteDominioInvalidoException("El nombre no puede estar vacío");
         }
         if (nombre.length() > 150) {
-            throw new ClienteDominioInvalidoException("El nombre no puede estar vacío");
+            throw new ClienteDominioInvalidoException("El nombre no puede superar los 150 caracteres");
         }
         if (apellido == null || apellido.isBlank()) {
             throw new ClienteDominioInvalidoException("El apellido no puede estar vacío");
         }
         if (apellido.length() > 150) {
-            throw new ClienteDominioInvalidoException("El apellido no puede estar vacío");
+            throw new ClienteDominioInvalidoException("El apellido no puede superar los 150 caracteres");
         }
         if (edad == null || edad <= 0 || edad > 150) {
             throw new ClienteDominioInvalidoException("La edad debe ser mayor que cero");

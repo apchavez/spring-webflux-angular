@@ -1,5 +1,6 @@
 package com.apchavez.customers.infrastructure.config;
 
+import jakarta.annotation.PreDestroy;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -11,6 +12,9 @@ import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
@@ -21,6 +25,30 @@ public class RateLimitingFilter implements WebFilter {
     private static final String TARGET_PATH = "/api/v1/customers";
 
     private final ConcurrentHashMap<String, AtomicInteger> windowCounts = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+    public RateLimitingFilter() {
+        // Elimina entradas de ventanas pasadas cada minuto para evitar memory leak
+        scheduler.scheduleAtFixedRate(
+                this::purgeOldWindows, WINDOW_MILLIS, WINDOW_MILLIS, TimeUnit.MILLISECONDS);
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        scheduler.shutdownNow();
+    }
+
+    private void purgeOldWindows() {
+        long currentWindow = System.currentTimeMillis() / WINDOW_MILLIS;
+        windowCounts.keySet().removeIf(key -> {
+            int colonIdx = key.lastIndexOf(':');
+            try {
+                return Long.parseLong(key.substring(colonIdx + 1)) < currentWindow;
+            } catch (NumberFormatException e) {
+                return true;
+            }
+        });
+    }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
