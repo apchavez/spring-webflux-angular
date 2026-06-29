@@ -16,11 +16,13 @@ Reactive REST API built with **Spring Boot WebFlux** for full CRUD customer mana
 | Language / Runtime | Java 21, Spring Boot 3.5.3 |
 | Reactivity | Spring WebFlux (Mono / Flux), Spring Data R2DBC |
 | Database | H2 (dev profile) / PostgreSQL 16 (prod profile) |
+| Cache | Redis (reactive, rate limiting) |
+| Messaging | Apache Kafka (KRaft, topic `customer-events`) |
 | Security | Spring Security (headers, CORS, rate limiting) |
 | Observability | Spring Boot Actuator, SLF4J + Logback, X-Request-Id |
 | API Docs | Springdoc OpenAPI 2 (Swagger UI) |
 | Build | Gradle 8, JaCoCo (≥ 80% on domain and application) |
-| Code quality | ArchUnit, SonarQube |
+| Code quality | ArchUnit, SonarCloud |
 | Containerization | Docker (multistage build) + docker-compose |
 | Orchestration | Kubernetes (manifests in `k8s/`) |
 | CI/CD | GitHub Actions → ghcr.io |
@@ -34,9 +36,12 @@ flowchart LR
     Client([HTTP Client]) --> Controller[CustomerController\nREST Adapter]
     Controller --> App[CustomerApplicationService\nApplication Layer]
     App --> Domain[CustomerDomainService\nDomain Layer]
-    Domain --> Port[CustomerRepositoryPort\nPort Interface]
-    Port --> Adapter[CustomerPersistenceAdapter\nInfrastructure]
+    App --> EventPort[CustomerEventPublisherPort\nOutput Port]
+    Domain --> RepoPort[CustomerRepositoryPort\nOutput Port]
+    RepoPort --> Adapter[CustomerPersistenceAdapter]
     Adapter --> DB[(PostgreSQL\nR2DBC)]
+    EventPort --> Kafka[KafkaCustomerEventPublisher]
+    Kafka --> Topic[[Kafka\ncustomer-events]]
 ```
 
 Hexagonal (Ports & Adapters) with three well-defined layers:
@@ -46,13 +51,15 @@ src/main/java/com/apchavez/customers
 ├── domain
 │   ├── model          Customer (record with invariants), CustomerState
 │   ├── exception      Typed domain exceptions
-│   ├── port           CustomerRepositoryPort (interface — the contract)
+│   ├── event          CustomerEvent, CustomerEventType
+│   ├── port           CustomerRepositoryPort, CustomerEventPublisherPort (interfaces)
 │   └── service        CustomerDomainService (pure business logic)
 ├── application
 │   └── CustomerApplicationService  (orchestration, audit logging, @Transactional)
 └── infrastructure
-    ├── config         Security, RateLimiting, RequestLogging, OpenApi, Startup
+    ├── config         Security, RateLimiting, RequestLogging, OpenApi, KafkaConfig, Startup
     ├── mapper         CustomerMapper (DTO ↔ Domain ↔ Entity)
+    ├── messaging      KafkaCustomerEventPublisher, NoOpCustomerEventPublisher
     ├── persistence    CustomerEntity, CustomerR2dbcRepository, CustomerPersistenceAdapter
     └── web            CustomerController, DTOs (Request/Update/Response), GlobalExceptionHandler
 ```
@@ -137,9 +144,10 @@ curl -X DELETE http://localhost:8080/api/v1/customers/1
 | Domain model — unit + property-based (jqwik) | `CustomerDomainTest` | `Customer` record invariants |
 | JSON serialization — property-based | `CustomerResponseDTOSerializationTest` | Round-trip without data loss |
 | Domain service — unit | `CustomerDomainServiceTest` | Business logic (create/find/update/delete) |
-| Application service — unit | `CustomerApplicationServiceTest` | Use case orchestration |
+| Application service — unit | `CustomerApplicationServiceTest` | Use case orchestration + event publishing |
 | Persistence adapter — `@DataR2dbcTest` | `CustomerPersistenceAdapterTest` | Persistence port with real H2 |
-| REST controller — full integration | `CustomerControllerIntegrationTest` | All endpoints and response codes |
+| Kafka publisher — unit | `KafkaCustomerEventPublisherTest` | JSON send, Kafka failure resilience, serialization error |
+| REST controller — full integration | `CustomerControllerIntegrationTest` | All endpoints and response codes (`NoOpCustomerEventPublisher`) |
 | Rate limiter — unit | `RateLimitingFilterTest` | Per-IP limit and IP isolation |
 | Actuator probes | `ActuatorHealthTest` | Liveness/Readiness |
 | Hexagonal architecture — ArchUnit | `ArchitectureTest` | 4 dependency rules enforced |
@@ -183,16 +191,18 @@ The manifests in `k8s/` are production-ready:
 | File | Description |
 |---|---|
 | `namespace.yaml` | `customer-service` namespace |
-| `configmap.yaml` | Non-sensitive configuration (profile, DB host) |
+| `configmap.yaml` | Non-sensitive configuration (profile, DB host, Kafka bootstrap) |
 | `secret.yaml` | Database credentials (base64) |
 | `deployment.yaml` | 2 replicas, ghcr.io image, probes, resource limits, securityContext |
 | `service.yaml` | ClusterIP on port 80 |
 | `ingress.yaml` | NGINX Ingress at `customer-service.local` |
+| `kafka.yaml` | Single-node Kafka (Bitnami KRaft, no Zookeeper) |
 
 Apply in order:
 
 ```bash
 kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/kafka.yaml
 kubectl apply -f k8s/secret.yaml
 kubectl apply -f k8s/configmap.yaml
 kubectl apply -f k8s/deployment.yaml
@@ -223,6 +233,7 @@ Kubernetes probes point to Actuator endpoints:
 
 - Reactive programming end-to-end: WebFlux controllers → R2DBC repository → PostgreSQL (no blocking I/O anywhere)
 - Hexagonal architecture with ArchUnit tests enforcing dependency rules at build time
+- Event-driven output port: Kafka publishes `customer-events` on create/update/delete; falls back to `NoOpCustomerEventPublisher` when Kafka is not configured (integration tests, local H2 profile)
 - Exhaustive test coverage: unit, integration, property-based, and architectural tests
 - Production Kubernetes manifests with health probes, resource limits, and security context
 - Multi-stage Docker build + automated publish to GHCR on every merge to main

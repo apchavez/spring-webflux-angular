@@ -124,11 +124,12 @@ class CustomerDomainServiceTest {
     // ── deleteCustomer ───────────────────────────────────────────────────────
 
     @Test
-    void deleteCustomer_shouldComplete_whenExists() {
+    void deleteCustomer_shouldReturnDeletedCustomer_whenExists() {
         when(repositoryPort.findById(1)).thenReturn(Mono.just(SAVED_CUSTOMER));
         when(repositoryPort.delete(1)).thenReturn(Mono.empty());
 
         StepVerifier.create(domainService.deleteCustomer(1))
+                .expectNext(SAVED_CUSTOMER)
                 .verifyComplete();
 
         verify(repositoryPort).findById(1);

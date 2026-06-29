@@ -1,6 +1,8 @@
 package com.apchavez.customers.application;
 
+import com.apchavez.customers.domain.event.CustomerEvent;
 import com.apchavez.customers.domain.model.Customer;
+import com.apchavez.customers.domain.port.CustomerEventPublisherPort;
 import com.apchavez.customers.domain.service.CustomerDomainService;
 import com.apchavez.customers.infrastructure.config.RequestLoggingFilter;
 import org.slf4j.Logger;
@@ -10,15 +12,20 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import static com.apchavez.customers.domain.event.CustomerEventType.*;
+
 @Service
 public class CustomerApplicationService {
 
     private static final Logger log = LoggerFactory.getLogger(CustomerApplicationService.class);
 
     private final CustomerDomainService domainService;
+    private final CustomerEventPublisherPort eventPublisher;
 
-    public CustomerApplicationService(CustomerDomainService domainService) {
+    public CustomerApplicationService(CustomerDomainService domainService,
+                                       CustomerEventPublisherPort eventPublisher) {
         this.domainService = domainService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -28,6 +35,8 @@ public class CustomerApplicationService {
             log.info("[{}] Crear cliente — nombre='{}', apellido='{}'",
                     rid, customer.nombre(), customer.apellido());
             return domainService.createCustomer(customer)
+                    .flatMap(saved -> eventPublisher.publish(CustomerEvent.of(CUSTOMER_CREATED, saved))
+                            .thenReturn(saved))
                     .doOnSuccess(saved -> log.info("[{}] Cliente creado — id={}", rid, saved.id()));
         });
     }
@@ -51,6 +60,8 @@ public class CustomerApplicationService {
             String rid = ctx.getOrDefault(RequestLoggingFilter.REQUEST_ID_CONTEXT_KEY, "-");
             log.info("[{}] Actualizar cliente — id={}", rid, id);
             return domainService.updateCustomer(id, updatedData)
+                    .flatMap(updated -> eventPublisher.publish(CustomerEvent.of(CUSTOMER_UPDATED, updated))
+                            .thenReturn(updated))
                     .doOnSuccess(updated -> log.info("[{}] Cliente actualizado — id={}", rid, updated.id()));
         });
     }
@@ -61,6 +72,7 @@ public class CustomerApplicationService {
             String rid = ctx.getOrDefault(RequestLoggingFilter.REQUEST_ID_CONTEXT_KEY, "-");
             log.info("[{}] Eliminar cliente — id={}", rid, id);
             return domainService.deleteCustomer(id)
+                    .flatMap(deleted -> eventPublisher.publish(CustomerEvent.of(CUSTOMER_DELETED, deleted)))
                     .doOnSuccess(v -> log.info("[{}] Cliente eliminado — id={}", rid, id));
         });
     }

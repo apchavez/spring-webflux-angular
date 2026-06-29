@@ -35,9 +35,9 @@ public class CustomerDomainService {
                                 updatedData.estado(), updatedData.edad())));
     }
 
-    public Mono<Void> deleteCustomer(Integer id) {
+    public Mono<Customer> deleteCustomer(Integer id) {
         return repositoryPort.findById(id)
                 .switchIfEmpty(Mono.error(new ClienteNoEncontradoException(id)))
-                .flatMap(existing -> repositoryPort.delete(id));
+                .flatMap(existing -> repositoryPort.delete(id).thenReturn(existing));
     }
 }

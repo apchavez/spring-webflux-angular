@@ -1,8 +1,10 @@
 package com.apchavez.customers.application;
 
+import com.apchavez.customers.domain.event.CustomerEvent;
 import com.apchavez.customers.domain.exception.ClienteNoEncontradoException;
 import com.apchavez.customers.domain.model.Customer;
 import com.apchavez.customers.domain.model.CustomerState;
+import com.apchavez.customers.domain.port.CustomerEventPublisherPort;
 import com.apchavez.customers.domain.port.CustomerRepositoryPort;
 import com.apchavez.customers.domain.service.CustomerDomainService;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +25,9 @@ class CustomerApplicationServiceTest {
     @Mock
     private CustomerRepositoryPort repositoryPort;
 
+    @Mock
+    private CustomerEventPublisherPort eventPublisher;
+
     private CustomerApplicationService applicationService;
 
     private static final Customer CUSTOMER_WITHOUT_ID =
@@ -33,13 +38,14 @@ class CustomerApplicationServiceTest {
     @BeforeEach
     void setUp() {
         CustomerDomainService domainService = new CustomerDomainService(repositoryPort);
-        applicationService = new CustomerApplicationService(domainService);
+        applicationService = new CustomerApplicationService(domainService, eventPublisher);
+        when(eventPublisher.publish(any(CustomerEvent.class))).thenReturn(Mono.empty());
     }
 
     // ── createCustomer ───────────────────────────────────────────────────────
 
     @Test
-    void createCustomer_shouldSaveAndReturnCustomerWithId() {
+    void createCustomer_shouldSaveAndPublishEvent() {
         when(repositoryPort.save(any())).thenReturn(Mono.just(SAVED_CUSTOMER));
 
         StepVerifier.create(applicationService.createCustomer(CUSTOMER_WITHOUT_ID))
@@ -47,7 +53,7 @@ class CustomerApplicationServiceTest {
                 .verifyComplete();
 
         verify(repositoryPort).save(CUSTOMER_WITHOUT_ID);
-        verify(repositoryPort, never()).findById(any());
+        verify(eventPublisher).publish(any(CustomerEvent.class));
     }
 
     // ── findById ─────────────────────────────────────────────────────────────
@@ -90,7 +96,7 @@ class CustomerApplicationServiceTest {
     // ── updateCustomer ───────────────────────────────────────────────────────
 
     @Test
-    void updateCustomer_shouldReturnUpdatedCustomer_whenExists() {
+    void updateCustomer_shouldReturnUpdatedCustomerAndPublishEvent() {
         Customer updatedData = new Customer(null, "Alexander", "Prieto Chavez", CustomerState.INACTIVE, 31);
         Customer expectedResult = new Customer(1, "Alexander", "Prieto Chavez", CustomerState.INACTIVE, 31);
 
@@ -103,6 +109,7 @@ class CustomerApplicationServiceTest {
 
         verify(repositoryPort).findById(1);
         verify(repositoryPort).update(expectedResult);
+        verify(eventPublisher).publish(any(CustomerEvent.class));
     }
 
     @Test
@@ -119,7 +126,7 @@ class CustomerApplicationServiceTest {
     // ── deleteCustomer ───────────────────────────────────────────────────────
 
     @Test
-    void deleteCustomer_shouldComplete_whenExists() {
+    void deleteCustomer_shouldCompleteAndPublishEvent() {
         when(repositoryPort.findById(1)).thenReturn(Mono.just(SAVED_CUSTOMER));
         when(repositoryPort.delete(1)).thenReturn(Mono.empty());
 
@@ -128,6 +135,7 @@ class CustomerApplicationServiceTest {
 
         verify(repositoryPort).findById(1);
         verify(repositoryPort).delete(1);
+        verify(eventPublisher).publish(any(CustomerEvent.class));
     }
 
     @Test
