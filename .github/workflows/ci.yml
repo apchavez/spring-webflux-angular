@@ -52,12 +52,12 @@ jobs:
           path: build/reports/jacoco/test/html/
           retention-days: 30
 
-      - name: Análisis SonarQube
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.SONAR_HOST_URL != ''
+      - name: SonarCloud analysis
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.SONAR_ORGANIZATION != ''
         run: ./gradlew sonar --no-daemon
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+          SONAR_HOST_URL: https://sonarcloud.io
 
   k8s-validate:
     name: Validar manifests k8s
