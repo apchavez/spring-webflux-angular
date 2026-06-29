@@ -1,5 +1,5 @@
 # ── Stage 1: Build ───────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM eclipse-temurin:25-jdk-alpine AS builder
 WORKDIR /app
 COPY gradlew .
 COPY gradle/ gradle/
@@ -8,7 +8,7 @@ COPY src/ src/
 RUN chmod +x gradlew && ./gradlew bootJar -x test --no-daemon
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 
 RUN apk add --no-cache curl && \
     addgroup -g 1001 -S appgroup && \
