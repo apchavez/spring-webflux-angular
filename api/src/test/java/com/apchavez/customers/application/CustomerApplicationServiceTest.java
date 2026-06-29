@@ -39,7 +39,7 @@ class CustomerApplicationServiceTest {
     void setUp() {
         CustomerDomainService domainService = new CustomerDomainService(repositoryPort);
         applicationService = new CustomerApplicationService(domainService, eventPublisher);
-        when(eventPublisher.publish(any(CustomerEvent.class))).thenReturn(Mono.empty());
+        lenient().when(eventPublisher.publish(any(CustomerEvent.class))).thenReturn(Mono.empty());
     }
 
     // ── createCustomer ───────────────────────────────────────────────────────
