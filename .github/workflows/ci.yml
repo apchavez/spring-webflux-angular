@@ -185,7 +185,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Configurar QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -265,7 +265,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Configurar QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
