@@ -161,6 +161,84 @@ class RateLimitingFilterTest {
         assertThat(exchange.getResponse().getStatusCode()).isNull();
     }
 
+    // ── Matching method but non-matching path is never rate-limited ─────────
+
+    @Test
+    void should_allow_post_to_non_target_path_without_calling_redis() {
+        MockServerWebExchange exchange = buildExchange(HttpMethod.POST, "/api/v1/other-resource", "9.9.9.9");
+
+        StepVerifier.create(filter.filter(exchange, passThroughChain()))
+                .verifyComplete();
+
+        assertThat(exchange.getResponse().getStatusCode()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(redisTemplate);
+    }
+
+    // ── X-Forwarded-For present but blank falls back to remote address ──────
+
+    @Test
+    void should_fall_back_to_remote_address_when_forwarded_header_is_blank() {
+        ConcurrentHashMap<String, AtomicLong> counters = new ConcurrentHashMap<>();
+        doAnswer(inv -> {
+            String key = ((java.util.List<?>) inv.getArgument(1)).get(0).toString();
+            return Flux.just(counters.computeIfAbsent(key, k -> new AtomicLong(0)).incrementAndGet());
+        }).when(redisTemplate).execute(any(), anyList(), anyList());
+
+        MockServerHttpRequest request = MockServerHttpRequest
+                .method(HttpMethod.POST, "/api/v1/customers")
+                .remoteAddress(new InetSocketAddress("11.11.11.11", 80))
+                .header("X-Forwarded-For", "   ")
+                .build();
+
+        StepVerifier.create(filter.filter(MockServerWebExchange.from(request), passThroughChain()))
+                .verifyComplete();
+
+        // key is derived from the remote address (11.11.11.11), not the blank header
+        assertThat(counters.keySet()).anyMatch(key -> key.contains("11.11.11.11"));
+    }
+
+    // ── X-Forwarded-For with only blank segments falls back to remote address ─
+
+    @Test
+    void should_fall_back_to_remote_address_when_forwarded_header_has_only_blank_segments() {
+        ConcurrentHashMap<String, AtomicLong> counters = new ConcurrentHashMap<>();
+        doAnswer(inv -> {
+            String key = ((java.util.List<?>) inv.getArgument(1)).get(0).toString();
+            return Flux.just(counters.computeIfAbsent(key, k -> new AtomicLong(0)).incrementAndGet());
+        }).when(redisTemplate).execute(any(), anyList(), anyList());
+
+        MockServerHttpRequest request = MockServerHttpRequest
+                .method(HttpMethod.POST, "/api/v1/customers")
+                .remoteAddress(new InetSocketAddress("12.12.12.12", 80))
+                .header("X-Forwarded-For", " , ,")
+                .build();
+
+        StepVerifier.create(filter.filter(MockServerWebExchange.from(request), passThroughChain()))
+                .verifyComplete();
+
+        assertThat(counters.keySet()).anyMatch(key -> key.contains("12.12.12.12"));
+    }
+
+    // ── No forwarded header and no remote address resolves to "unknown" ─────
+
+    @Test
+    void should_use_unknown_ip_when_no_forwarded_header_and_no_remote_address() {
+        ConcurrentHashMap<String, AtomicLong> counters = new ConcurrentHashMap<>();
+        doAnswer(inv -> {
+            String key = ((java.util.List<?>) inv.getArgument(1)).get(0).toString();
+            return Flux.just(counters.computeIfAbsent(key, k -> new AtomicLong(0)).incrementAndGet());
+        }).when(redisTemplate).execute(any(), anyList(), anyList());
+
+        MockServerHttpRequest request = MockServerHttpRequest
+                .method(HttpMethod.POST, "/api/v1/customers")
+                .build(); // no remoteAddress() call -> null remote address
+
+        StepVerifier.create(filter.filter(MockServerWebExchange.from(request), passThroughChain()))
+                .verifyComplete();
+
+        assertThat(counters.keySet()).anyMatch(key -> key.contains("unknown"));
+    }
+
     // ── X-Forwarded-For: rightmost IP is used ────────────────────────────────
 
     @Test
