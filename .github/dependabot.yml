@@ -9,6 +9,10 @@ updates:
     directory: "/web"
     schedule:
       interval: weekly
+    groups:
+      angular:
+        patterns:
+          - "@angular/*"
 
   - package-ecosystem: github-actions
     directory: "/"
