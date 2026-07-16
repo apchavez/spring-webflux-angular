@@ -1,0 +1,9 @@
+sku,name,description,category,price,stock,active
+SKU-IMP-001,Wireless Mouse,Mouse inalámbrico ergonómico,Electronics,29.99,150,true
+SKU-IMP-002,Mechanical Keyboard,Teclado mecánico RGB,Electronics,79.99,60,true
+SKU-IMP-003,USB-C Hub,Hub USB-C 7 puertos,Accessories,24.50,80,true
+SKU-IMP-004,Monitor Stand,Soporte de monitor ajustable,Furniture,45.00,25,true
+SKU-IMP-005,Webcam HD,Webcam 1080p con micrófono,Electronics,39.99,40,false
+SKU-DUP-001,Duplicate SKU Product,Este SKU ya existe en la base,Electronics,10.00,5,true
+SKU-IMP-006,Bad Price Product,Precio no numérico,Electronics,not-a-number,10,true
+SKU-IMP-007,,Nombre vacío,Electronics,15.00,10,true

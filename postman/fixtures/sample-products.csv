@@ -1,0 +1,18 @@
+sku,name,description,category,price,stock,active
+SKU-DEMO-001,Wireless Mouse,Mouse inalámbrico ergonómico,Electronics,29.99,150,true
+SKU-DEMO-002,Mechanical Keyboard,Teclado mecánico RGB,Electronics,79.99,60,true
+SKU-DEMO-003,USB-C Hub,Hub USB-C 7 puertos,Accessories,24.50,80,true
+SKU-DEMO-004,Monitor Stand,Soporte de monitor ajustable,Furniture,45.00,25,true
+SKU-DEMO-005,Webcam HD,Webcam 1080p con micrófono,Electronics,39.99,40,false
+SKU-DEMO-006,Laptop Sleeve,Funda para laptop 14 pulgadas,Accessories,19.99,100,true
+SKU-DEMO-007,Desk Lamp,Lámpara LED de escritorio,Furniture,34.50,30,true
+SKU-DEMO-008,Bluetooth Speaker,Parlante Bluetooth portátil,Electronics,49.99,55,true
+SKU-DEMO-009,Ergonomic Chair,Silla ergonómica ajustable,Furniture,199.99,12,true
+SKU-DEMO-010,Noise Cancelling Headphones,Auriculares con cancelación de ruido,Electronics,129.99,45,true
+SKU-DEMO-011,Wireless Charger,Cargador inalámbrico 15W,Electronics,22.99,90,true
+SKU-DEMO-012,Standing Desk Converter,Convertidor de escritorio de pie,Furniture,159.00,18,true
+SKU-DEMO-013,Cable Organizer,Organizador de cables,Accessories,9.99,200,true
+SKU-DEMO-014,4K Monitor,Monitor 27 pulgadas 4K,Electronics,349.99,20,true
+SKU-DEMO-015,Mouse Pad XL,Mousepad extendido,Accessories,14.99,120,true
+SKU-DEMO-016,Precio Inválido,Fila con precio no numérico para la demo,Electronics,no-es-un-numero,10,true
+SKU-DEMO-017,,Fila con nombre vacío para la demo,Electronics,15.00,10,true
