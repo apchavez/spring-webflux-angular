@@ -1,4 +1,5 @@
 name: Scheduled Product Report
+# Weekly product-catalog summary — re-pushed to force GitHub to refresh the cached workflow display name.
 
 on:
   schedule:
