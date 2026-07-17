@@ -97,7 +97,7 @@ jobs:
           retention-days: 30
 
       - name: Email reports (optional)
-        if: ${{ vars.REPORT_EMAIL != '' && secrets.SMTP_SERVER != '' }}
+        if: ${{ vars.REPORT_EMAIL != '' && vars.SMTP_SERVER != '' }}
         uses: dawidd6/action-send-mail@v18
         with:
           server_address: ${{ secrets.SMTP_SERVER }}
