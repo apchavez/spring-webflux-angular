@@ -54,6 +54,9 @@ describe('authInterceptor', () => {
     authServiceMock.token.mockReturnValue('stale-token');
     const navigateSpy = vi.spyOn(router, 'navigate');
 
+    // Empty on purpose: RxJS re-throws synchronously as an unhandled error if a
+    // subscribe() that triggers an error has no error callback at all.
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     http.get('/api/v1/products/active').subscribe({ error: () => {} });
 
     httpMock.expectOne('/api/v1/products/active').flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
@@ -66,6 +69,9 @@ describe('authInterceptor', () => {
     authServiceMock.token.mockReturnValue(null);
     const navigateSpy = vi.spyOn(router, 'navigate');
 
+    // Empty on purpose: RxJS re-throws synchronously as an unhandled error if a
+    // subscribe() that triggers an error has no error callback at all.
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     http.post('/api/v1/auth/login', {}).subscribe({ error: () => {} });
 
     httpMock.expectOne('/api/v1/auth/login').flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
