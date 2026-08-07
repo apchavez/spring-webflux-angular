@@ -1,0 +1,31 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  padding-top: 64px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 360px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 12px;
+
+  mat-form-field {
+    width: 100%;
+  }
+
+  button {
+    margin-top: 8px;
+  }
+}
+
+.error-message {
+  color: var(--mat-sys-error);
+  font-size: 0.875rem;
+  margin: 0 0 8px;
+}
