@@ -1,5 +1,5 @@
 # ── Stage 1: Build ───────────────────────────────────────────────────────────
-FROM --platform=$BUILDPLATFORM eclipse-temurin:21-jdk-alpine AS builder
+FROM --platform=$BUILDPLATFORM eclipse-temurin:24-jdk-alpine AS builder
 WORKDIR /app
 COPY gradlew .
 COPY gradle/ gradle/
