@@ -98,7 +98,7 @@ jobs:
 
       - name: Email reports (optional)
         if: ${{ vars.REPORT_EMAIL != '' && vars.SMTP_SERVER != '' }}
-        uses: dawidd6/action-send-mail@v18
+        uses: dawidd6/action-send-mail@v21
         with:
           server_address: ${{ secrets.SMTP_SERVER }}
           server_port: ${{ secrets.SMTP_PORT }}
